@@ -1,0 +1,15 @@
+{
+  "name": "chat-server",
+  "version": "1.0.0",
+  "description": "Real-time chat backend — Express, Socket.io, MongoDB",
+  "private": true,
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+
+# Secrets — only the example file is committed
+.env
+!.env.example
+
+# Private files
+notes/
+CLAUDE.md
+
+.DS_Store
