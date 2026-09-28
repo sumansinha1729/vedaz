@@ -2,14 +2,17 @@ import { useCallback, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useSocket } from '../hooks/useSocket';
 import { usePresence } from '../hooks/usePresence';
+import { useMessages } from '../hooks/useMessages';
 import Sidebar from '../components/layout/Sidebar';
 import ChatHeader from '../components/layout/ChatHeader';
 import ConnectionBanner from '../components/layout/ConnectionBanner';
+import MessageList from '../components/chat/MessageList';
 
 export default function ChatPage() {
   const { user, logout } = useAuth();
   const { status } = useSocket();
   const { users, onlineCount } = usePresence();
+  const chat = useMessages();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -27,9 +30,17 @@ export default function ChatPage() {
         />
         <ConnectionBanner />
 
-        <main className="flex flex-1 items-center justify-center overflow-y-auto p-4 text-sm text-muted">
-          Messages will appear here
-        </main>
+        <MessageList
+          messages={chat.messages}
+          currentUserId={user._id}
+          status={chat.status}
+          error={chat.error}
+          hasMore={chat.hasMore}
+          loadingOlder={chat.loadingOlder}
+          olderError={chat.olderError}
+          onLoadOlder={chat.loadOlder}
+          onRetry={chat.reloadHistory}
+        />
       </div>
     </div>
   );
