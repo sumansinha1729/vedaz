@@ -2,8 +2,10 @@ import http from 'node:http';
 import app from './app.js';
 import { env } from './config/env.js';
 import { connectDB, disconnectDB } from './config/db.js';
+import { initSocket } from './sockets/index.js';
 
 const server = http.createServer(app);
+const io = initSocket(server);
 
 server.on('error', (err) => {
   if (err.code === 'EADDRINUSE') {
@@ -27,7 +29,7 @@ server.listen(env.PORT, () => {
 
 function shutdown(signal) {
   console.log(`${signal} received, shutting down`);
-  server.close(async () => {
+  io.close(async () => {
     await disconnectDB();
     process.exit(0);
   });

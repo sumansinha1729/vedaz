@@ -1,4 +1,5 @@
 export const DEFAULT_ROOM = 'general';
+export const userRoom = (userId) => `user:${userId}`;
 
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 20;
