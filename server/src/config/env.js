@@ -5,6 +5,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().positive().default(5050),
   CLIENT_URL: z.url().default('http://localhost:5173'),
+  MONGODB_URI: z.string().startsWith('mongodb', 'Must be a MongoDB connection string'),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { ZodError } from 'zod';
 import { AppError } from '../utils/AppError.js';
 
@@ -22,6 +23,19 @@ export function errorHandler(err, req, res, next) {
       field: issue.path.join('.'),
       message: issue.message,
     }));
+  } else if (err instanceof mongoose.Error.ValidationError) {
+    statusCode = 400;
+    code = 'VALIDATION_ERROR';
+    message = 'Invalid data';
+    details = Object.values(err.errors).map((e) => ({ field: e.path, message: e.message }));
+  } else if (err instanceof mongoose.Error.CastError) {
+    statusCode = 400;
+    code = 'INVALID_ID';
+    message = `Invalid ${err.path}`;
+  } else if (err.code === 11000) {
+    statusCode = 409;
+    code = 'DUPLICATE';
+    message = 'Resource already exists';
   } else if (err.type === 'entity.parse.failed') {
     statusCode = 400;
     code = 'INVALID_JSON';
