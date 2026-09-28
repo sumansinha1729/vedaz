@@ -34,6 +34,8 @@ export default function MessageList({
   onLoadOlder,
   onRetry,
   onRetryMessage,
+  isGroup,
+  emptyText,
 }) {
   const isReady = status === 'ready';
   const { containerRef, handleScroll, scrollToBottom, showJumpButton, newCount } = useChatScroll(
@@ -74,7 +76,7 @@ export default function MessageList({
   } else if (messages.length === 0) {
     content = (
       <CenteredState icon={<MessagesSquare className="size-6" />} title="No messages yet">
-        Say hi and start the conversation.
+        {emptyText}
       </CenteredState>
     );
   } else {
@@ -103,6 +105,7 @@ export default function MessageList({
               isOwn={item.message.sender._id === currentUserId}
               isFirstInGroup={item.isFirstInGroup}
               isLastInGroup={item.isLastInGroup}
+              showSender={isGroup}
               onRetry={onRetryMessage}
               observeRef={needsReadReceipt(item.message) ? observeUnread : undefined}
             />

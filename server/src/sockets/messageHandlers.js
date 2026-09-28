@@ -30,8 +30,8 @@ export function registerMessageHandlers(socket) {
         throw new AppError('You are sending messages too fast', 429, 'RATE_LIMITED');
       }
 
-      const { text, clientId } = sendMessageSchema.parse(payload);
-      const message = await createMessage({ senderId: userId, text, clientId });
+      const { text, clientId, room } = sendMessageSchema.parse(payload);
+      const message = await createMessage({ senderId: userId, text, clientId, room });
       return { message };
     }),
   );

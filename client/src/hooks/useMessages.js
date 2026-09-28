@@ -73,7 +73,7 @@ function reducer(state, action) {
   }
 }
 
-export function useMessages() {
+export function useMessages(room) {
   const { user } = useAuth();
   const { socket } = useSocket();
   const { showToast } = useToast();
@@ -83,12 +83,12 @@ export function useMessages() {
   const loadHistory = useCallback(async () => {
     dispatch({ type: 'HISTORY_REQUESTED' });
     try {
-      const data = await fetchMessages();
+      const data = await fetchMessages({ room });
       dispatch({ type: 'HISTORY_LOADED', ...data });
     } catch (err) {
       dispatch({ type: 'HISTORY_FAILED', error: err.message });
     }
-  }, []);
+  }, [room]);
 
   const loadOlder = useCallback(async () => {
     if (loadingOlderRef.current || !state.hasMore) return;
@@ -96,28 +96,28 @@ export function useMessages() {
     dispatch({ type: 'OLDER_REQUESTED' });
 
     try {
-      const data = await fetchMessages({ before: state.nextCursor });
+      const data = await fetchMessages({ room, before: state.nextCursor });
       dispatch({ type: 'OLDER_LOADED', ...data });
     } catch (err) {
       dispatch({ type: 'OLDER_FAILED', error: err.message });
     } finally {
       loadingOlderRef.current = false;
     }
-  }, [state.hasMore, state.nextCursor]);
+  }, [room, state.hasMore, state.nextCursor]);
 
   const deliver = useCallback(
     async ({ text, clientId }) => {
       try {
         const { message } = socket.connected
-          ? await emitWithAck(socket, 'message:send', { text, clientId })
-          : await sendMessageRequest({ text, clientId });
+          ? await emitWithAck(socket, 'message:send', { text, clientId, room })
+          : await sendMessageRequest({ text, clientId, room });
         dispatch({ type: 'MESSAGES_RECEIVED', messages: [message] });
       } catch (err) {
         dispatch({ type: 'MESSAGE_FAILED', clientId, error: err.message });
         showToast(err.message);
       }
     },
-    [socket, showToast],
+    [socket, room, showToast],
   );
 
   const sendMessage = useCallback(
@@ -125,6 +125,7 @@ export function useMessages() {
       const message = {
         clientId: crypto.randomUUID(),
         text,
+        room,
         sender: { _id: user._id, username: user.username },
         createdAt: new Date().toISOString(),
         deliveredTo: [],
@@ -134,7 +135,7 @@ export function useMessages() {
       dispatch({ type: 'MESSAGE_SENDING', message });
       deliver(message);
     },
-    [user, deliver],
+    [room, user, deliver],
   );
 
   // Retries reuse the same clientId, so the server can never save it twice
@@ -157,6 +158,7 @@ export function useMessages() {
     let hasConnectedBefore = socket.connected;
 
     const handleNewMessage = ({ message }) => {
+      if (message.room !== room) return;
       dispatch({ type: 'MESSAGES_RECEIVED', messages: [message] });
     };
 
@@ -167,7 +169,7 @@ export function useMessages() {
         return;
       }
       try {
-        const data = await fetchMessages();
+        const data = await fetchMessages({ room });
         dispatch({ type: 'MESSAGES_RECEIVED', messages: data.messages });
       } catch {}
     };
@@ -182,7 +184,7 @@ export function useMessages() {
       socket.off('message:status', handleStatus);
       socket.off('connect', handleConnect);
     };
-  }, [socket]);
+  }, [socket, room]);
 
   return { ...state, loadOlder, reloadHistory: loadHistory, sendMessage, retryMessage };
 }

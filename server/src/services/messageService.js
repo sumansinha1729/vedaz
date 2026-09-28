@@ -1,9 +1,31 @@
+import mongoose from 'mongoose';
 import { Message } from '../models/Message.js';
 import { AppError } from '../utils/AppError.js';
 import { DEFAULT_ROOM, userRoom } from '../config/constants.js';
+import { canAccessRoom, getDmMembers, roomTargets } from '../utils/rooms.js';
+import { userExists } from './userService.js';
 import { getIO } from '../sockets/index.js';
 
 const SENDER_FIELDS = 'username';
+
+async function assertRoomAccess(room, userId) {
+  if (!canAccessRoom(room, userId)) {
+    throw new AppError('You do not have access to this conversation', 403, 'FORBIDDEN');
+  }
+
+  const members = getDmMembers(room);
+  if (members) {
+    const partnerId = members.find((id) => id !== userId);
+    if (!(await userExists(partnerId))) {
+      throw new AppError('User not found', 404, 'USER_NOT_FOUND');
+    }
+  }
+}
+
+// Only messages from rooms this user belongs to: general or a DM containing their id
+function accessibleRoomsFilter(userId) {
+  return { $or: [{ room: DEFAULT_ROOM }, { room: { $regex: `^dm:.*${userId}` } }] };
+}
 
 async function saveMessage({ senderId, text, clientId, room }) {
   try {
@@ -22,16 +44,19 @@ async function saveMessage({ senderId, text, clientId, room }) {
 }
 
 export async function createMessage({ senderId, text, clientId, room = DEFAULT_ROOM }) {
+  await assertRoomAccess(room, senderId);
+
   const message = await saveMessage({ senderId, text, clientId, room });
-  getIO().to(room).emit('message:new', { message });
+  getIO().to(roomTargets(message.room)).emit('message:new', { message });
   return message;
 }
 
-export async function getMessages({ before, limit, room = DEFAULT_ROOM }) {
+export async function getMessages({ userId, before, limit, room = DEFAULT_ROOM }) {
+  await assertRoomAccess(room, userId);
   const filter = { room };
 
   if (before) {
-    const cursor = await Message.findById(before).select('createdAt').lean();
+    const cursor = await Message.findOne({ _id: before, room }).select('createdAt').lean();
     if (!cursor) throw new AppError('Invalid cursor', 400, 'INVALID_CURSOR');
 
     filter.$or = [
@@ -57,6 +82,17 @@ export async function getMessages({ before, limit, room = DEFAULT_ROOM }) {
   };
 }
 
+export async function getUnreadCounts(userId) {
+  const me = new mongoose.Types.ObjectId(userId);
+
+  const results = await Message.aggregate([
+    { $match: { sender: { $ne: me }, readBy: { $ne: me }, ...accessibleRoomsFilter(userId) } },
+    { $group: { _id: '$room', count: { $sum: 1 } } },
+  ]);
+
+  return Object.fromEntries(results.map(({ _id, count }) => [_id, count]));
+}
+
 export async function markMessages({ messageIds, userId, status }) {
   const field = status === 'read' ? 'readBy' : 'deliveredTo';
 
@@ -64,6 +100,7 @@ export async function markMessages({ messageIds, userId, status }) {
     _id: { $in: messageIds },
     sender: { $ne: userId },
     [field]: { $ne: userId },
+    ...accessibleRoomsFilter(userId),
   })
     .select('_id')
     .lean();

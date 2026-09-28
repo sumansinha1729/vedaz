@@ -4,7 +4,7 @@ import { useSocket } from './useSocket';
 const START_THROTTLE_MS = 2000;
 const IDLE_TIMEOUT_MS = 3000;
 
-export function useTyping() {
+export function useTyping(room) {
   const { socket } = useSocket();
   const [typingUsers, setTypingUsers] = useState([]);
   const isTypingRef = useRef(false);
@@ -16,23 +16,24 @@ export function useTyping() {
     clearTimeout(idleTimerRef.current);
     if (!isTypingRef.current) return;
     isTypingRef.current = false;
-    socket.volatile.emit('typing:stop');
-  }, [socket]);
+    socket.volatile.emit('typing:stop', { room });
+  }, [socket, room]);
 
   const notifyTyping = useCallback(() => {
     const now = Date.now();
     if (!isTypingRef.current || now - lastStartRef.current > START_THROTTLE_MS) {
-      socket.volatile.emit('typing:start');
+      socket.volatile.emit('typing:start', { room });
       isTypingRef.current = true;
       lastStartRef.current = now;
     }
 
     clearTimeout(idleTimerRef.current);
     idleTimerRef.current = setTimeout(stopTyping, IDLE_TIMEOUT_MS);
-  }, [socket, stopTyping]);
+  }, [socket, room, stopTyping]);
 
   useEffect(() => {
-    const handleUpdate = ({ userId, username, isTyping }) => {
+    const handleUpdate = ({ userId, username, isTyping, room: updateRoom }) => {
+      if (updateRoom !== room) return;
       setTypingUsers((prev) => {
         const others = prev.filter((u) => u.userId !== userId);
         return isTyping ? [...others, { userId, username }] : others;
@@ -47,7 +48,7 @@ export function useTyping() {
       socket.off('disconnect', clearAll);
       stopTyping();
     };
-  }, [socket, stopTyping]);
+  }, [socket, room, stopTyping]);
 
   return { typingUsers, notifyTyping, stopTyping };
 }

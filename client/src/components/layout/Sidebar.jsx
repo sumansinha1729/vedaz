@@ -1,28 +1,45 @@
 import { useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { Link } from 'react-router';
+import { Hash, X } from 'lucide-react';
 import Logo from '../ui/Logo';
 import Avatar from '../ui/Avatar';
 import IconButton from '../ui/IconButton';
 import { formatLastSeen } from '../../utils/date';
+import { GENERAL_ROOM, dmRoomId } from '../../utils/rooms';
+import { ROOM_NAME } from '../../utils/constants';
 
-function UserRow({ user, isMe }) {
+function UnreadBadge({ count }) {
+  if (!count) return null;
   return (
-    <li className="flex items-center gap-3 rounded-xl px-2 py-2">
-      <Avatar name={user.username} size="sm" online={user.online} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
-          {user.username}
-          {isMe && <span className="ml-1.5 text-xs font-normal text-muted">(you)</span>}
-        </p>
-        <p className="truncate text-xs text-muted">
-          {user.online ? 'Online' : formatLastSeen(user.lastSeen)}
-        </p>
-      </div>
-    </li>
+    <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-on-primary">
+      {count > 99 ? '99+' : count}
+      <span className="sr-only"> unread</span>
+    </span>
   );
 }
 
-export default function Sidebar({ open, onClose, users, currentUser }) {
+function NavItem({ to, active, onClick, children }) {
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      aria-current={active ? 'page' : undefined}
+      className={`flex min-h-11 items-center gap-3 rounded-xl px-2 py-1.5 transition-colors ${
+        active ? 'bg-primary/10 text-fg' : 'hover:bg-subtle'
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function SectionTitle({ children }) {
+  return (
+    <h2 className="px-2 text-xs font-semibold tracking-wide text-muted uppercase">{children}</h2>
+  );
+}
+
+export default function Sidebar({ open, onClose, users, currentUser, activeRoom, getUnreadCount }) {
   const closeButtonRef = useRef(null);
 
   useEffect(() => {
@@ -33,8 +50,7 @@ export default function Sidebar({ open, onClose, users, currentUser }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
-  const online = users.filter((u) => u.online);
-  const offline = users.filter((u) => !u.online);
+  const people = users.filter((u) => u._id !== currentUser._id);
 
   return (
     <>
@@ -47,7 +63,7 @@ export default function Sidebar({ open, onClose, users, currentUser }) {
       />
 
       <aside
-        aria-label="People"
+        aria-label="Conversations"
         className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-line bg-surface pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-all duration-200 md:static md:visible md:translate-x-0 ${
           open ? 'visible translate-x-0' : 'invisible -translate-x-full'
         }`}
@@ -65,32 +81,50 @@ export default function Sidebar({ open, onClose, users, currentUser }) {
           </IconButton>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-2 py-4">
-          <h2 className="px-2 text-xs font-semibold tracking-wide text-muted uppercase">
-            Online — {online.length}
-          </h2>
+        <nav className="flex-1 overflow-y-auto px-2 py-4">
+          <SectionTitle>Channels</SectionTitle>
           <ul className="mt-2">
-            {online.map((user) => (
-              <UserRow key={user._id} user={user} isMe={user._id === currentUser._id} />
-            ))}
+            <li>
+              <NavItem to="/" active={activeRoom === GENERAL_ROOM} onClick={onClose}>
+                <span className="grid size-8 place-items-center rounded-lg bg-subtle text-muted">
+                  <Hash className="size-4" aria-hidden="true" />
+                </span>
+                <span className="text-sm font-medium">{ROOM_NAME}</span>
+                <UnreadBadge count={getUnreadCount(GENERAL_ROOM)} />
+              </NavItem>
+            </li>
           </ul>
 
-          {offline.length > 0 && (
-            <>
-              <h2 className="mt-6 px-2 text-xs font-semibold tracking-wide text-muted uppercase">
-                Offline — {offline.length}
-              </h2>
-              <ul className="mt-2 opacity-70">
-                {offline.map((user) => (
-                  <UserRow key={user._id} user={user} isMe={user._id === currentUser._id} />
-                ))}
-              </ul>
-            </>
+          <div className="mt-6">
+            <SectionTitle>Direct messages</SectionTitle>
+          </div>
+          {people.length === 0 ? (
+            <p className="mt-2 px-2 text-sm text-muted">No one else has joined yet.</p>
+          ) : (
+            <ul className="mt-2">
+              {people.map((person) => {
+                const room = dmRoomId(currentUser._id, person._id);
+                return (
+                  <li key={person._id}>
+                    <NavItem to={`/dm/${person._id}`} active={activeRoom === room} onClick={onClose}>
+                      <Avatar name={person.username} size="sm" online={person.online} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">{person.username}</p>
+                        <p className="truncate text-xs text-muted">
+                          {person.online ? 'Online' : formatLastSeen(person.lastSeen)}
+                        </p>
+                      </div>
+                      <UnreadBadge count={getUnreadCount(room)} />
+                    </NavItem>
+                  </li>
+                );
+              })}
+            </ul>
           )}
-        </div>
+        </nav>
 
         <div className="flex items-center gap-3 border-t border-line p-4">
-          <Avatar name={currentUser.username} size="sm" />
+          <Avatar name={currentUser.username} size="sm" online />
           <div className="min-w-0">
             <p className="text-xs text-muted">Signed in as</p>
             <p className="truncate text-sm font-medium">{currentUser.username}</p>

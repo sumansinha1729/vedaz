@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { SendHorizontal } from 'lucide-react';
-import { MESSAGE_MAX_LENGTH, ROOM_NAME } from '../../utils/constants';
+import { MESSAGE_MAX_LENGTH } from '../../utils/constants';
 
 const MAX_HEIGHT_PX = 160;
 const COUNTER_THRESHOLD = 100;
@@ -8,7 +8,7 @@ const COUNTER_THRESHOLD = 100;
 // On phones, Enter adds a new line and the send button sends
 const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches;
 
-export default function Composer({ onSend, onTyping, onStopTyping }) {
+export default function Composer({ placeholder, onSend, onTyping, onStopTyping }) {
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
 
@@ -61,7 +61,7 @@ export default function Composer({ onSend, onTyping, onStopTyping }) {
           }}
           onKeyDown={handleKeyDown}
           maxLength={MESSAGE_MAX_LENGTH}
-          placeholder={`Message #${ROOM_NAME}`}
+          placeholder={placeholder}
           aria-describedby="composer-help"
           className="block flex-1 resize-none rounded-2xl border border-line bg-app px-4 py-2.5 text-base leading-6 outline-none transition placeholder:text-muted/70 focus:border-primary focus:ring-4 focus:ring-primary/15"
         />

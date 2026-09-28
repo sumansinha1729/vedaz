@@ -13,6 +13,10 @@ export async function listUsers() {
   return User.find().sort({ username: 1 }).lean();
 }
 
+export async function userExists(id) {
+  return Boolean(await User.exists({ _id: id }));
+}
+
 export async function updateLastSeen(userId, lastSeen) {
   await User.updateOne({ _id: userId }, { lastSeen });
 }

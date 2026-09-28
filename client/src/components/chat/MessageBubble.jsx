@@ -26,6 +26,7 @@ function MessageBubble({
   isOwn,
   isFirstInGroup,
   isLastInGroup,
+  showSender,
   onRetry,
   observeRef,
 }) {
@@ -46,6 +47,7 @@ function MessageBubble({
       } ${isFirstInGroup ? 'mt-3' : 'mt-0.5'}`}
     >
       {!isOwn &&
+        showSender &&
         (isLastInGroup ? (
           <Avatar name={message.sender.username} size="sm" />
         ) : (
@@ -53,7 +55,7 @@ function MessageBubble({
         ))}
 
       <div className={`flex max-w-[80%] flex-col sm:max-w-[70%] ${isOwn ? 'items-end' : 'items-start'}`}>
-        {!isOwn && isFirstInGroup && (
+        {!isOwn && showSender && isFirstInGroup && (
           <span className="mb-1 ml-3 text-xs font-medium text-muted">{message.sender.username}</span>
         )}
 
