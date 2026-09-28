@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { MESSAGE_MAX_LENGTH } from '../config/constants.js';
 
+const objectId = z.string().regex(/^[a-f\d]{24}$/i, 'Invalid message id');
+
 export const sendMessageSchema = z.object({
   text: z
     .string({ error: 'Message text is required' })
@@ -11,9 +13,10 @@ export const sendMessageSchema = z.object({
 });
 
 export const getMessagesSchema = z.object({
-  before: z
-    .string()
-    .regex(/^[a-f\d]{24}$/i, 'Invalid cursor')
-    .optional(),
+  before: objectId.optional(),
   limit: z.coerce.number().int().min(1).max(50).default(30),
+});
+
+export const messageIdsSchema = z.object({
+  messageIds: z.array(objectId).min(1).max(100),
 });

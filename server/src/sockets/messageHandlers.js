@@ -1,5 +1,5 @@
-import { sendMessageSchema } from '../validators/messageValidators.js';
-import { createMessage } from '../services/messageService.js';
+import { sendMessageSchema, messageIdsSchema } from '../validators/messageValidators.js';
+import { createMessage, markMessages } from '../services/messageService.js';
 import { AppError } from '../utils/AppError.js';
 import { MESSAGE_RATE_LIMIT } from '../config/constants.js';
 import { withAck } from './withAck.js';
@@ -33,6 +33,24 @@ export function registerMessageHandlers(socket) {
       const { text, clientId } = sendMessageSchema.parse(payload);
       const message = await createMessage({ senderId: userId, text, clientId });
       return { message };
+    }),
+  );
+
+  socket.on(
+    'message:delivered',
+    withAck(async (payload) => {
+      const { messageIds } = messageIdsSchema.parse(payload);
+      const updated = await markMessages({ messageIds, userId, status: 'delivered' });
+      return { updated };
+    }),
+  );
+
+  socket.on(
+    'message:read',
+    withAck(async (payload) => {
+      const { messageIds } = messageIdsSchema.parse(payload);
+      const updated = await markMessages({ messageIds, userId, status: 'read' });
+      return { updated };
     }),
   );
 }

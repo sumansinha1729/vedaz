@@ -1,6 +1,6 @@
 import { Message } from '../models/Message.js';
 import { AppError } from '../utils/AppError.js';
-import { DEFAULT_ROOM } from '../config/constants.js';
+import { DEFAULT_ROOM, userRoom } from '../config/constants.js';
 import { getIO } from '../sockets/index.js';
 
 const SENDER_FIELDS = 'username';
@@ -55,4 +55,48 @@ export async function getMessages({ before, limit, room = DEFAULT_ROOM }) {
     hasMore,
     nextCursor: hasMore ? messages[0]._id : null,
   };
+}
+
+export async function markMessages({ messageIds, userId, status }) {
+  const field = status === 'read' ? 'readBy' : 'deliveredTo';
+
+  const pending = await Message.find({
+    _id: { $in: messageIds },
+    sender: { $ne: userId },
+    [field]: { $ne: userId },
+  })
+    .select('_id')
+    .lean();
+
+  if (pending.length === 0) return 0;
+
+  const ids = pending.map((m) => m._id);
+  // A read message is always delivered too
+  const update =
+    status === 'read'
+      ? { $addToSet: { readBy: userId, deliveredTo: userId } }
+      : { $addToSet: { deliveredTo: userId } };
+
+  await Message.updateMany({ _id: { $in: ids } }, update);
+
+  const updated = await Message.find({ _id: { $in: ids } })
+    .select('sender deliveredTo readBy')
+    .lean();
+  notifySenders(updated);
+
+  return updated.length;
+}
+
+function notifySenders(messages) {
+  const updatesBySender = new Map();
+
+  for (const { _id, sender, deliveredTo, readBy } of messages) {
+    const senderId = sender.toString();
+    if (!updatesBySender.has(senderId)) updatesBySender.set(senderId, []);
+    updatesBySender.get(senderId).push({ messageId: _id, deliveredTo, readBy });
+  }
+
+  for (const [senderId, updates] of updatesBySender) {
+    getIO().to(userRoom(senderId)).emit('message:status', { updates });
+  }
 }
