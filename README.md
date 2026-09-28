@@ -2,8 +2,10 @@
 
 A real-time chat application built with React, Node.js (Express), Socket.io and MongoDB.
 
-- **Live app:** _coming soon_
-- **Live API:** _coming soon_
+- **Live app:** https://relay-chat-zeta.vercel.app
+- **Live API:** https://relay-chat-api-f3ph.onrender.com (health check: [/api/health](https://relay-chat-api-f3ph.onrender.com/api/health))
+
+> The backend runs on Render's free plan, which sleeps when idle. The first request after a while can take up to a minute.
 
 ## Project setup
 
@@ -15,8 +17,8 @@ Requirements:
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/YOUR-REPO.git
-cd YOUR-REPO
+git clone https://github.com/sumansinha1729/vedaz.git
+cd vedaz
 ```
 
 The project has two folders: `server` (backend) and `client` (frontend).
