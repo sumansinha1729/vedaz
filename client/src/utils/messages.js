@@ -13,6 +13,13 @@ export function upsertMessages(current, incoming) {
   return [...byKey.values()].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 }
 
+export function getMessageStatus(message, currentUserId) {
+  if (message.localStatus) return message.localStatus;
+  if (message.readBy.some((id) => id !== currentUserId)) return 'read';
+  if (message.deliveredTo.some((id) => id !== currentUserId)) return 'delivered';
+  return 'sent';
+}
+
 function startsNewGroup(prev, message) {
   return (
     !prev ||

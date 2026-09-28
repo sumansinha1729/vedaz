@@ -46,6 +46,16 @@ function reducer(state, action) {
       return { ...state, loadingOlder: false, olderError: action.error };
     case 'MESSAGES_RECEIVED':
       return { ...state, messages: upsertMessages(state.messages, markSaved(action.messages)) };
+    case 'STATUS_UPDATED': {
+      const updates = new Map(action.updates.map((u) => [u.messageId, u]));
+      return {
+        ...state,
+        messages: state.messages.map((m) => {
+          const update = updates.get(m._id);
+          return update ? { ...m, deliveredTo: update.deliveredTo, readBy: update.readBy } : m;
+        }),
+      };
+    }
     case 'MESSAGE_SENDING':
       return { ...state, messages: upsertMessages(state.messages, [action.message]) };
     case 'MESSAGE_FAILED':
@@ -159,10 +169,14 @@ export function useMessages() {
       } catch {}
     };
 
+    const handleStatus = ({ updates }) => dispatch({ type: 'STATUS_UPDATED', updates });
+
     socket.on('message:new', handleNewMessage);
+    socket.on('message:status', handleStatus);
     socket.on('connect', handleConnect);
     return () => {
       socket.off('message:new', handleNewMessage);
+      socket.off('message:status', handleStatus);
       socket.off('connect', handleConnect);
     };
   }, [socket]);

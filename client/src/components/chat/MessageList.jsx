@@ -6,7 +6,8 @@ import DateSeparator from './DateSeparator';
 import Button from '../ui/Button';
 import Spinner from '../ui/Spinner';
 import { useChatScroll } from '../../hooks/useChatScroll';
-import { buildMessageItems } from '../../utils/messages';
+import { useReadReceipts } from '../../hooks/useReadReceipts';
+import { buildMessageItems, getMessageStatus } from '../../utils/messages';
 
 const NO_MESSAGES = [];
 
@@ -41,6 +42,10 @@ export default function MessageList({
   );
   const topSentinelRef = useRef(null);
   const items = useMemo(() => buildMessageItems(messages), [messages]);
+  const { observeUnread } = useReadReceipts(isReady ? messages : NO_MESSAGES, currentUserId);
+
+  const needsReadReceipt = (message) =>
+    message._id && message.sender._id !== currentUserId && !message.readBy.includes(currentUserId);
 
   useEffect(() => {
     const sentinel = topSentinelRef.current;
@@ -94,10 +99,12 @@ export default function MessageList({
             <MessageBubble
               key={item.key}
               message={item.message}
+              status={getMessageStatus(item.message, currentUserId)}
               isOwn={item.message.sender._id === currentUserId}
               isFirstInGroup={item.isFirstInGroup}
               isLastInGroup={item.isLastInGroup}
               onRetry={onRetryMessage}
+              observeRef={needsReadReceipt(item.message) ? observeUnread : undefined}
             />
           ),
         )}

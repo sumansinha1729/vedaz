@@ -1,17 +1,36 @@
 import { memo, useState } from 'react';
-import { Check, Clock, RotateCw, CircleAlert } from 'lucide-react';
+import { Check, CheckCheck, Clock, RotateCw, CircleAlert } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import { formatFullDate, formatTime } from '../../utils/date';
 
+const STATUS_ICONS = {
+  sending: { Icon: Clock, label: 'Sending', className: 'opacity-70' },
+  failed: { Icon: CircleAlert, label: 'Not sent', className: 'opacity-70' },
+  sent: { Icon: Check, label: 'Sent', className: 'opacity-70' },
+  delivered: { Icon: CheckCheck, label: 'Delivered', className: 'opacity-70' },
+  read: { Icon: CheckCheck, label: 'Read', className: 'text-read' },
+};
+
 function StatusIcon({ status }) {
-  if (status === 'sending') return <Clock className="size-3.5" aria-label="Sending" />;
-  if (status === 'failed') return <CircleAlert className="size-3.5" aria-label="Not sent" />;
-  return <Check className="size-3.5" aria-label="Sent" />;
+  const { Icon, label, className } = STATUS_ICONS[status];
+  return (
+    <span title={label} className="flex">
+      <Icon className={`size-3.5 ${className}`} aria-label={label} />
+    </span>
+  );
 }
 
-function MessageBubble({ message, isOwn, isFirstInGroup, isLastInGroup, onRetry }) {
+function MessageBubble({
+  message,
+  status,
+  isOwn,
+  isFirstInGroup,
+  isLastInGroup,
+  onRetry,
+  observeRef,
+}) {
   const [showDate, setShowDate] = useState(false);
-  const failed = message.localStatus === 'failed';
+  const failed = status === 'failed';
 
   const bubbleColors = isOwn
     ? 'bg-primary text-on-primary'
@@ -20,6 +39,8 @@ function MessageBubble({ message, isOwn, isFirstInGroup, isLastInGroup, onRetry 
 
   return (
     <div
+      ref={observeRef}
+      data-message-id={message._id}
       className={`flex items-end gap-2 motion-safe:animate-message-in ${
         isOwn ? 'justify-end' : 'justify-start'
       } ${isFirstInGroup ? 'mt-3' : 'mt-0.5'}`}
@@ -45,11 +66,15 @@ function MessageBubble({ message, isOwn, isFirstInGroup, isLastInGroup, onRetry 
           <p className="min-w-0 text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap">
             {message.text}
           </p>
-          <div className="flex shrink-0 items-center gap-1 pb-0.5 text-[11px] opacity-70">
-            <time dateTime={message.createdAt} title={formatFullDate(message.createdAt)}>
+          <div className="flex shrink-0 items-center gap-1 pb-0.5 text-[11px]">
+            <time
+              dateTime={message.createdAt}
+              title={formatFullDate(message.createdAt)}
+              className="opacity-70"
+            >
               {formatTime(message.createdAt)}
             </time>
-            {isOwn && <StatusIcon status={message.localStatus} />}
+            {isOwn && <StatusIcon status={status} />}
           </div>
         </div>
 

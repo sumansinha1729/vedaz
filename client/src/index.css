@@ -15,7 +15,7 @@
   --danger: #dc2626;
   --success: #16a34a;
   --warning: #b45309;
-  --read: #0ea5e9;
+  --read: #67e8f9;
 }
 
 .dark {
@@ -31,7 +31,7 @@
   --danger: #f87171;
   --success: #4ade80;
   --warning: #fbbf24;
-  --read: #38bdf8;
+  --read: #67e8f9;
 }
 
 @theme inline {
