@@ -14,6 +14,7 @@
   --on-primary: #ffffff;
   --danger: #dc2626;
   --success: #16a34a;
+  --warning: #b45309;
   --read: #0ea5e9;
 }
 
@@ -29,6 +30,7 @@
   --on-primary: #ffffff;
   --danger: #f87171;
   --success: #4ade80;
+  --warning: #fbbf24;
   --read: #38bdf8;
 }
 
@@ -46,6 +48,7 @@
   --color-on-primary: var(--on-primary);
   --color-danger: var(--danger);
   --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-read: var(--read);
 }
 
