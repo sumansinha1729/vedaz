@@ -32,6 +32,7 @@ export default function MessageList({
   olderError,
   onLoadOlder,
   onRetry,
+  onRetryMessage,
 }) {
   const isReady = status === 'ready';
   const { containerRef, handleScroll, scrollToBottom, showJumpButton, newCount } = useChatScroll(
@@ -96,6 +97,7 @@ export default function MessageList({
               isOwn={item.message.sender._id === currentUserId}
               isFirstInGroup={item.isFirstInGroup}
               isLastInGroup={item.isLastInGroup}
+              onRetry={onRetryMessage}
             />
           ),
         )}

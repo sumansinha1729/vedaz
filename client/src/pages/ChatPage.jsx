@@ -7,6 +7,7 @@ import Sidebar from '../components/layout/Sidebar';
 import ChatHeader from '../components/layout/ChatHeader';
 import ConnectionBanner from '../components/layout/ConnectionBanner';
 import MessageList from '../components/chat/MessageList';
+import Composer from '../components/chat/Composer';
 
 export default function ChatPage() {
   const { user, logout } = useAuth();
@@ -40,7 +41,9 @@ export default function ChatPage() {
           olderError={chat.olderError}
           onLoadOlder={chat.loadOlder}
           onRetry={chat.reloadHistory}
+          onRetryMessage={chat.retryMessage}
         />
+        <Composer onSend={chat.sendMessage} />
       </div>
     </div>
   );

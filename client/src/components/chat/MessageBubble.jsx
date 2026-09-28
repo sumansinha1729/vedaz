@@ -1,9 +1,17 @@
 import { memo, useState } from 'react';
+import { Check, Clock, RotateCw, CircleAlert } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 import { formatFullDate, formatTime } from '../../utils/date';
 
-function MessageBubble({ message, isOwn, isFirstInGroup, isLastInGroup }) {
+function StatusIcon({ status }) {
+  if (status === 'sending') return <Clock className="size-3.5" aria-label="Sending" />;
+  if (status === 'failed') return <CircleAlert className="size-3.5" aria-label="Not sent" />;
+  return <Check className="size-3.5" aria-label="Sent" />;
+}
+
+function MessageBubble({ message, isOwn, isFirstInGroup, isLastInGroup, onRetry }) {
   const [showDate, setShowDate] = useState(false);
+  const failed = message.localStatus === 'failed';
 
   const bubbleColors = isOwn
     ? 'bg-primary text-on-primary'
@@ -30,7 +38,9 @@ function MessageBubble({ message, isOwn, isFirstInGroup, isLastInGroup }) {
 
         <div
           onClick={() => setShowDate((value) => !value)}
-          className={`flex flex-wrap items-end justify-end gap-x-2.5 rounded-2xl px-3 py-1.5 shadow-xs ${bubbleColors} ${tail}`}
+          className={`flex flex-wrap items-end justify-end gap-x-2.5 rounded-2xl px-3 py-1.5 shadow-xs ${bubbleColors} ${tail} ${
+            failed ? 'opacity-70' : ''
+          }`}
         >
           <p className="min-w-0 text-[15px] leading-relaxed wrap-break-word whitespace-pre-wrap">
             {message.text}
@@ -39,8 +49,20 @@ function MessageBubble({ message, isOwn, isFirstInGroup, isLastInGroup }) {
             <time dateTime={message.createdAt} title={formatFullDate(message.createdAt)}>
               {formatTime(message.createdAt)}
             </time>
+            {isOwn && <StatusIcon status={message.localStatus} />}
           </div>
         </div>
+
+        {failed && (
+          <button
+            onClick={() => onRetry(message)}
+            title={message.error}
+            className="mt-1 flex min-h-8 items-center gap-1.5 px-1 text-xs font-medium text-danger hover:underline"
+          >
+            <RotateCw className="size-3.5" aria-hidden="true" />
+            Not sent. Tap to retry
+          </button>
+        )}
 
         {showDate && (
           <span className="mt-1 px-1 text-xs text-muted">{formatFullDate(message.createdAt)}</span>

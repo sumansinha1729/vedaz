@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { fetchMessages } from '../api/messages';
+import { fetchMessages, sendMessage as sendMessageRequest } from '../api/messages';
+import { emitWithAck } from '../socket/socket';
 import { upsertMessages } from '../utils/messages';
+import { useAuth } from './useAuth';
 import { useSocket } from './useSocket';
 
 const initialState = {
@@ -13,6 +15,9 @@ const initialState = {
   olderError: null,
 };
 
+// Messages from the server are saved, so any local "sending"/"failed" flag no longer applies
+const markSaved = (messages) => messages.map((m) => ({ ...m, localStatus: undefined, error: undefined }));
+
 function reducer(state, action) {
   switch (action.type) {
     case 'HISTORY_REQUESTED':
@@ -21,7 +26,7 @@ function reducer(state, action) {
       return {
         ...state,
         status: 'ready',
-        messages: upsertMessages(state.messages, action.messages),
+        messages: upsertMessages(state.messages, markSaved(action.messages)),
         hasMore: action.hasMore,
         nextCursor: action.nextCursor,
       };
@@ -33,20 +38,32 @@ function reducer(state, action) {
       return {
         ...state,
         loadingOlder: false,
-        messages: upsertMessages(state.messages, action.messages),
+        messages: upsertMessages(state.messages, markSaved(action.messages)),
         hasMore: action.hasMore,
         nextCursor: action.nextCursor,
       };
     case 'OLDER_FAILED':
       return { ...state, loadingOlder: false, olderError: action.error };
     case 'MESSAGES_RECEIVED':
-      return { ...state, messages: upsertMessages(state.messages, action.messages) };
+      return { ...state, messages: upsertMessages(state.messages, markSaved(action.messages)) };
+    case 'MESSAGE_SENDING':
+      return { ...state, messages: upsertMessages(state.messages, [action.message]) };
+    case 'MESSAGE_FAILED':
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.clientId === action.clientId && !m._id
+            ? { ...m, localStatus: 'failed', error: action.error }
+            : m,
+        ),
+      };
     default:
       return state;
   }
 }
 
 export function useMessages() {
+  const { user } = useAuth();
   const { socket } = useSocket();
   const [state, dispatch] = useReducer(reducer, initialState);
   const loadingOlderRef = useRef(false);
@@ -75,6 +92,49 @@ export function useMessages() {
       loadingOlderRef.current = false;
     }
   }, [state.hasMore, state.nextCursor]);
+
+  const deliver = useCallback(
+    async ({ text, clientId }) => {
+      try {
+        const { message } = socket.connected
+          ? await emitWithAck(socket, 'message:send', { text, clientId })
+          : await sendMessageRequest({ text, clientId });
+        dispatch({ type: 'MESSAGES_RECEIVED', messages: [message] });
+      } catch (err) {
+        dispatch({ type: 'MESSAGE_FAILED', clientId, error: err.message });
+      }
+    },
+    [socket],
+  );
+
+  const sendMessage = useCallback(
+    (text) => {
+      const message = {
+        clientId: crypto.randomUUID(),
+        text,
+        sender: { _id: user._id, username: user.username },
+        createdAt: new Date().toISOString(),
+        deliveredTo: [],
+        readBy: [],
+        localStatus: 'sending',
+      };
+      dispatch({ type: 'MESSAGE_SENDING', message });
+      deliver(message);
+    },
+    [user, deliver],
+  );
+
+  // Retries reuse the same clientId, so the server can never save it twice
+  const retryMessage = useCallback(
+    (message) => {
+      dispatch({
+        type: 'MESSAGE_SENDING',
+        message: { ...message, localStatus: 'sending', error: undefined },
+      });
+      deliver(message);
+    },
+    [deliver],
+  );
 
   useEffect(() => {
     loadHistory();
@@ -107,5 +167,5 @@ export function useMessages() {
     };
   }, [socket]);
 
-  return { ...state, loadOlder, reloadHistory: loadHistory };
+  return { ...state, loadOlder, reloadHistory: loadHistory, sendMessage, retryMessage };
 }
