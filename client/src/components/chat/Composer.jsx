@@ -8,7 +8,7 @@ const COUNTER_THRESHOLD = 100;
 // On phones, Enter adds a new line and the send button sends
 const isTouchDevice = () => window.matchMedia('(pointer: coarse)').matches;
 
-export default function Composer({ onSend }) {
+export default function Composer({ onSend, onTyping, onStopTyping }) {
   const [text, setText] = useState('');
   const textareaRef = useRef(null);
 
@@ -25,6 +25,7 @@ export default function Composer({ onSend }) {
   const submit = () => {
     if (!canSend) return;
     onSend(trimmed);
+    onStopTyping();
     setText('');
     textareaRef.current.focus();
   };
@@ -53,7 +54,11 @@ export default function Composer({ onSend }) {
           ref={textareaRef}
           rows={1}
           value={text}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => {
+            setText(event.target.value);
+            if (event.target.value.trim()) onTyping();
+            else onStopTyping();
+          }}
           onKeyDown={handleKeyDown}
           maxLength={MESSAGE_MAX_LENGTH}
           placeholder={`Message #${ROOM_NAME}`}

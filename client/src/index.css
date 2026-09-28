@@ -54,11 +54,25 @@
 
 @theme {
   --animate-message-in: message-in 0.2s ease-out;
+  --animate-typing-dot: typing-dot 1.2s ease-in-out infinite;
 
   @keyframes message-in {
     from {
       opacity: 0;
       transform: translateY(6px);
+    }
+  }
+
+  @keyframes typing-dot {
+    0%,
+    60%,
+    100% {
+      opacity: 0.4;
+      transform: translateY(0);
+    }
+    30% {
+      opacity: 1;
+      transform: translateY(-3px);
     }
   }
 }

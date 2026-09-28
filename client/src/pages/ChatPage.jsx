@@ -3,17 +3,20 @@ import { useAuth } from '../hooks/useAuth';
 import { useSocket } from '../hooks/useSocket';
 import { usePresence } from '../hooks/usePresence';
 import { useMessages } from '../hooks/useMessages';
+import { useTyping } from '../hooks/useTyping';
 import Sidebar from '../components/layout/Sidebar';
 import ChatHeader from '../components/layout/ChatHeader';
 import ConnectionBanner from '../components/layout/ConnectionBanner';
 import MessageList from '../components/chat/MessageList';
 import Composer from '../components/chat/Composer';
+import TypingIndicator from '../components/chat/TypingIndicator';
 
 export default function ChatPage() {
   const { user, logout } = useAuth();
   const { status } = useSocket();
   const { users, onlineCount } = usePresence();
   const chat = useMessages();
+  const { typingUsers, notifyTyping, stopTyping } = useTyping();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
@@ -43,7 +46,8 @@ export default function ChatPage() {
           onRetry={chat.reloadHistory}
           onRetryMessage={chat.retryMessage}
         />
-        <Composer onSend={chat.sendMessage} />
+        <TypingIndicator users={typingUsers} />
+        <Composer onSend={chat.sendMessage} onTyping={notifyTyping} onStopTyping={stopTyping} />
       </div>
     </div>
   );
