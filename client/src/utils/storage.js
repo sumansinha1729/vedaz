@@ -1,4 +1,5 @@
 const TOKEN_KEY = 'token';
+const USER_KEY = 'user';
 
 export function getToken() {
   try {
@@ -8,14 +9,25 @@ export function getToken() {
   }
 }
 
-export function setToken(token) {
+export function getStoredUser() {
   try {
-    localStorage.setItem(TOKEN_KEY, token);
+    const user = localStorage.getItem(USER_KEY);
+    return getToken() && user ? JSON.parse(user) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveSession({ token, user }) {
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
   } catch {}
 }
 
-export function clearToken() {
+export function clearSession() {
   try {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
   } catch {}
 }
