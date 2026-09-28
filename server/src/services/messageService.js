@@ -1,20 +1,30 @@
 import { Message } from '../models/Message.js';
 import { AppError } from '../utils/AppError.js';
 import { DEFAULT_ROOM } from '../config/constants.js';
+import { getIO } from '../sockets/index.js';
 
 const SENDER_FIELDS = 'username';
 
-export async function createMessage({ senderId, text, clientId, room = DEFAULT_ROOM }) {
+async function saveMessage({ senderId, text, clientId, room }) {
   try {
     const message = await Message.create({ room, sender: senderId, text, clientId });
-    return await message.populate('sender', SENDER_FIELDS);
+    await message.populate('sender', SENDER_FIELDS);
+    return message.toObject();
   } catch (err) {
     // Same clientId sent twice (e.g. a retry): return the already saved message
     if (err.code === 11000) {
-      return Message.findOne({ sender: senderId, clientId }).populate('sender', SENDER_FIELDS);
+      return Message.findOne({ sender: senderId, clientId })
+        .populate('sender', SENDER_FIELDS)
+        .lean();
     }
     throw err;
   }
+}
+
+export async function createMessage({ senderId, text, clientId, room = DEFAULT_ROOM }) {
+  const message = await saveMessage({ senderId, text, clientId, room });
+  getIO().to(room).emit('message:new', { message });
+  return message;
 }
 
 export async function getMessages({ before, limit, room = DEFAULT_ROOM }) {

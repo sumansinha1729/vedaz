@@ -1,5 +1,6 @@
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { AppError } from '../utils/AppError.js';
+import { MESSAGE_RATE_LIMIT } from '../config/constants.js';
 
 function createLimiter({ windowMs, limit, message, keyGenerator }) {
   return rateLimit({
@@ -19,8 +20,7 @@ export const loginLimiter = createLimiter({
 });
 
 export const messageLimiter = createLimiter({
-  windowMs: 60 * 1000,
-  limit: 30,
+  ...MESSAGE_RATE_LIMIT,
   message: 'You are sending messages too fast',
   keyGenerator: (req) => req.user?.id ?? ipKeyGenerator(req.ip),
 });

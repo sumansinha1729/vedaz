@@ -2,6 +2,7 @@ import { Server } from 'socket.io';
 import { env } from '../config/env.js';
 import { DEFAULT_ROOM, userRoom } from '../config/constants.js';
 import { socketAuth } from './socketAuth.js';
+import { registerMessageHandlers } from './messageHandlers.js';
 
 let io;
 
@@ -18,6 +19,8 @@ export function initSocket(httpServer) {
     socket.join(DEFAULT_ROOM);
     socket.join(userRoom(userId));
     console.log(`Socket connected: ${username} (${socket.id})`);
+
+    registerMessageHandlers(socket);
 
     socket.on('disconnect', (reason) => {
       console.log(`Socket disconnected: ${username} (${socket.id}) - ${reason}`);
