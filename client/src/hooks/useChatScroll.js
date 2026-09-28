@@ -12,9 +12,10 @@ export function useChatScroll(messages, currentUserId) {
 
   const lastKey = messages.length ? messageKey(messages.at(-1)) : null;
 
-  const scrollToBottom = useCallback((behavior = 'smooth') => {
+  const scrollToBottom = useCallback(() => {
     const el = containerRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior });
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: reduceMotion ? 'auto' : 'smooth' });
   }, []);
 
   const handleScroll = useCallback(() => {

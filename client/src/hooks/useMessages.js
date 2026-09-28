@@ -4,6 +4,7 @@ import { emitWithAck } from '../socket/socket';
 import { upsertMessages } from '../utils/messages';
 import { useAuth } from './useAuth';
 import { useSocket } from './useSocket';
+import { useToast } from './useToast';
 
 const initialState = {
   messages: [],
@@ -75,6 +76,7 @@ function reducer(state, action) {
 export function useMessages() {
   const { user } = useAuth();
   const { socket } = useSocket();
+  const { showToast } = useToast();
   const [state, dispatch] = useReducer(reducer, initialState);
   const loadingOlderRef = useRef(false);
 
@@ -112,9 +114,10 @@ export function useMessages() {
         dispatch({ type: 'MESSAGES_RECEIVED', messages: [message] });
       } catch (err) {
         dispatch({ type: 'MESSAGE_FAILED', clientId, error: err.message });
+        showToast(err.message);
       }
     },
-    [socket],
+    [socket, showToast],
   );
 
   const sendMessage = useCallback(

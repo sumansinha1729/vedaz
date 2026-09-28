@@ -55,6 +55,14 @@
 @theme {
   --animate-message-in: message-in 0.2s ease-out;
   --animate-typing-dot: typing-dot 1.2s ease-in-out infinite;
+  --animate-toast-in: toast-in 0.2s ease-out;
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+    }
+  }
 
   @keyframes message-in {
     from {
@@ -87,5 +95,15 @@
   body {
     @apply bg-app font-sans text-fg antialiased;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 }

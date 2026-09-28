@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { fetchUsers } from '../api/users';
 import { useSocket } from './useSocket';
+import { useToast } from './useToast';
 
 export function usePresence() {
   const { socket } = useSocket();
+  const { showToast } = useToast();
   const [users, setUsers] = useState([]);
   const [onlineIds, setOnlineIds] = useState(() => new Set());
 
   useEffect(() => {
     fetchUsers()
       .then((data) => setUsers(data.users))
-      .catch(() => {});
-  }, []);
+      .catch(() => showToast("Couldn't load the member list"));
+  }, [showToast]);
 
   useEffect(() => {
     const handleInit = ({ onlineUserIds }) => setOnlineIds(new Set(onlineUserIds));

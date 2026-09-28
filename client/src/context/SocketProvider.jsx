@@ -4,7 +4,7 @@ import { createSocket } from '../socket/socket';
 import { useAuth } from '../hooks/useAuth';
 
 export function SocketProvider({ children }) {
-  const { logout } = useAuth();
+  const { expireSession } = useAuth();
   const [socket] = useState(createSocket);
   const [status, setStatus] = useState('connecting');
 
@@ -22,7 +22,7 @@ export function SocketProvider({ children }) {
     const handleConnectError = () => {
       // Not retrying means the server rejected our token
       if (!socket.active) {
-        logout();
+        expireSession();
         return;
       }
       setStatus(lostStatus());
@@ -47,7 +47,7 @@ export function SocketProvider({ children }) {
       window.removeEventListener('online', handleOnline);
       socket.disconnect();
     };
-  }, [socket, logout]);
+  }, [socket, expireSession]);
 
   const value = useMemo(() => ({ socket, status }), [socket, status]);
 

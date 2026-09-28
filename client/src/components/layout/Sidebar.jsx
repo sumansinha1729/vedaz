@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import Logo from '../ui/Logo';
 import Avatar from '../ui/Avatar';
@@ -23,8 +23,11 @@ function UserRow({ user, isMe }) {
 }
 
 export default function Sidebar({ open, onClose, users, currentUser }) {
+  const closeButtonRef = useRef(null);
+
   useEffect(() => {
     if (!open) return;
+    closeButtonRef.current?.focus();
     const handleKeyDown = (event) => event.key === 'Escape' && onClose();
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -52,7 +55,12 @@ export default function Sidebar({ open, onClose, users, currentUser }) {
         <div className="flex h-16 shrink-0 items-center gap-3 border-b border-line px-4">
           <Logo />
           <span className="flex-1 font-semibold">Relay Chat</span>
-          <IconButton label="Close sidebar" onClick={onClose} className="md:hidden">
+          <IconButton
+            ref={closeButtonRef}
+            label="Close sidebar"
+            onClick={onClose}
+            className="md:hidden"
+          >
             <X className="size-5" />
           </IconButton>
         </div>
