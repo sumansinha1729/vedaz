@@ -1,5 +1,7 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5050';
 
+export const ROOM_NAME = 'General';
+
 export const USERNAME_MIN_LENGTH = 3;
 export const USERNAME_MAX_LENGTH = 20;
 export const USERNAME_PATTERN = /^[a-zA-Z0-9_]+$/;
