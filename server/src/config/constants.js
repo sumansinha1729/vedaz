@@ -6,3 +6,5 @@ export const USERNAME_MAX_LENGTH = 20;
 
 export const MESSAGE_MAX_LENGTH = 1000;
 export const MESSAGE_RATE_LIMIT = { limit: 30, windowMs: 60 * 1000 };
+
+export const TYPING_TIMEOUT_MS = 5000;

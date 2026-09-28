@@ -3,6 +3,8 @@ import { env } from '../config/env.js';
 import { DEFAULT_ROOM, userRoom } from '../config/constants.js';
 import { socketAuth } from './socketAuth.js';
 import { registerMessageHandlers } from './messageHandlers.js';
+import { registerPresenceHandlers } from './presenceHandlers.js';
+import { registerTypingHandlers } from './typingHandlers.js';
 
 let io;
 
@@ -20,7 +22,9 @@ export function initSocket(httpServer) {
     socket.join(userRoom(userId));
     console.log(`Socket connected: ${username} (${socket.id})`);
 
+    registerPresenceHandlers(io, socket);
     registerMessageHandlers(socket);
+    registerTypingHandlers(socket);
 
     socket.on('disconnect', (reason) => {
       console.log(`Socket disconnected: ${username} (${socket.id}) - ${reason}`);
